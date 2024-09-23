@@ -1,7 +1,7 @@
 [package]
 name = "unsafe_cell_slice"
-version = "0.1.0"
-edition = "2018"
+version = "0.1.1"
+edition = "2021"
 rust-version = "1.60"
 description = "A microlibrary for creating multiple mutable references to a slice"
 documentation = "https://docs.rs/unsafe_cell_slice"

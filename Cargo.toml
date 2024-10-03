@@ -2,7 +2,7 @@
 name = "unsafe_cell_slice"
 version = "0.2.0"
 edition = "2021"
-rust-version = "1.60"
+rust-version = "1.63"
 description = "A microlibrary for creating multiple mutable subslices of a slice"
 documentation = "https://docs.rs/unsafe_cell_slice"
 repository = "https://github.com/LDeakin/unsafe_cell_slice"

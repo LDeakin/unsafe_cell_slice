@@ -72,6 +72,18 @@ impl<'a, T: Copy> UnsafeCellSlice<'a, T> {
         Self::new(unsafe { vec_spare_capacity_to_mut_slice(vec) })
     }
 
+    /// Return the length of the underlying slice.
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    /// Reutrn whether the underlying slice is empty.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     /// Get a mutable reference to a subslice of the underlying slice.
     ///
     /// Note that unlike [`std::ops::IndexMut::index_mut`], `self` is not a mutable reference.
@@ -80,13 +92,16 @@ impl<'a, T: Copy> UnsafeCellSlice<'a, T> {
     /// # Safety
     /// This is very unsafe because it is capable of creating multiple mutable references to the same data.
     /// It is the responsibility of the caller to only access non-overlapping subslices to avoid data races and undefined behavior.
-    /// 
+    ///
     /// # Panics
     /// May panic if the index is out of bounds.
     #[must_use]
     #[allow(clippy::mut_from_ref)]
     pub unsafe fn index_mut(&self, index: std::ops::Range<usize>) -> &mut [T] {
-        assert!(index.end <= self.len() && index.start <= index.end, "index out of bounds");
+        assert!(
+            index.end <= self.len() && index.start <= index.end,
+            "index out of bounds"
+        );
         let ptr = self.0[index.start].get();
         std::slice::from_raw_parts_mut(ptr, index.end - index.start)
     }

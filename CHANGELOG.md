@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
  - Change rust edition to 2021
  - Bump MSRV to 1.63
+ - Remove `Copy` bound on `T` in `UnsafeCellSlice`
 
 ### Removed
  - **Breaking**: Remove `UnsafeCellSlice::as_mut_slice()` (potentially unsound)

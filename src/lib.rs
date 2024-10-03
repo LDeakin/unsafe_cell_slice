@@ -57,7 +57,7 @@ pub struct UnsafeCellSlice<'a, T>(&'a [std::cell::UnsafeCell<T>]);
 unsafe impl<'a, T: Send + Sync> Send for UnsafeCellSlice<'a, T> {}
 unsafe impl<'a, T: Send + Sync> Sync for UnsafeCellSlice<'a, T> {}
 
-impl<'a, T: Copy> UnsafeCellSlice<'a, T> {
+impl<'a, T> UnsafeCellSlice<'a, T> {
     /// Create a new [`UnsafeCellSlice`] from a mutable slice.
     #[must_use]
     pub fn new(slice: &'a mut [T]) -> Self {

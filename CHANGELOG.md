@@ -7,8 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+ - Add `UnsafeCellSlice::index_mut`
+
 ### Changed
  - Change rust edition to 2021
+
+### Removed
+ - **Breaking**: Remove `UnsafeCellSlice::as_mut_slice` (potentially unsound)
 
 ## [0.1.0] - 2024-09-01
 

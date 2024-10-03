@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2024-10-03
+
 ### Added
  - Add `UnsafeCellSlice::index_mut()`
  - Add `UnsafeCellSlice::len()` and `UnsafeCellSlice::is_empty()`
@@ -24,5 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
  - Initial release
 
-[unreleased]: https://github.com/LDeakin/unsafe_cell_slice/compare/v0.1.0...HEAD
+[unreleased]: https://github.com/LDeakin/unsafe_cell_slice/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/LDeakin/unsafe_cell_slice/releases/tag/v0.2.0
 [0.1.0]: https://github.com/LDeakin/unsafe_cell_slice/releases/tag/v0.1.0

@@ -24,7 +24,7 @@ However, such approaches may not be applicable in complicated use cases, such as
 
 ### `UnsafeCellSlice`
 An `UnsafeCellSlice` can be created from a mutable slice or the spare capacity in a `Vec`.
-It has an unsafe `get_mut` and `index_mut` methods that permit creating multiple mutable references of subslices or elements.
+It has unsafe `get_mut` and `index_mut` methods that permit creating multiple mutable references of subslices or elements.
 
 ```rust
 let mut data = vec![0u8; 2];

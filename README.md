@@ -5,42 +5,42 @@
 ![msrv](https://img.shields.io/crates/msrv/unsafe_cell_slice)
 [![build](https://github.com/LDeakin/unsafe_cell_slice/actions/workflows/ci.yml/badge.svg)](https://github.com/LDeakin/unsafe_cell_slice/actions/workflows/ci.yml)
 
-A Rust microlibrary for creating multiple mutable subslices of a `slice`.
+A Rust microlibrary for creating multiple mutable references to a `slice`.
 
 ### Motivation
 The rust borrow checker forbids creating multiple mutable references of a `slice`.
 For example, this fails to compile with ```cannot borrow `data` as mutable more than once at a time```:
 ```rust
 let mut data = vec![0u8; 2];
-let data_a: &mut [u8] = &mut data[0..1];
-let data_b: &mut [u8] = &mut data[1..2];
-data_a[0] = 0;
-data_b[1] = 1;
+let data_a: &mut u8 = &mut data[0];
+let data_b: &mut u8 = &mut data[1];
+*data_a = 0;
+*data_b = 1;
 ```
 
-There are use cases for acquiring multiple mutable subslices of a `slice`, such as for writing independent elements in parallel.
+There are use cases for acquiring multiple mutable references of a `slice`, such as for writing independent elements in parallel.
 A safe approach is to borrow non-overlapping slices via `slice::split_at_mut`, `slice::chunks_mut`, etc.
 However, such approaches may not be applicable in complicated use cases, such as writing to interleaved elements.
 
 ### `UnsafeCellSlice`
 An `UnsafeCellSlice` can be created from a mutable slice or the spare capacity in a `Vec`.
-It has an unsafe `index_mut` method that permits creating multiple mutable subslices.
+It has an unsafe `get_mut` and `index_mut` methods that permit creating multiple mutable references of subslices or elements.
 
 ```rust
 let mut data = vec![0u8; 2];
 {
     let data = UnsafeCellSlice::new(&mut data);
-    let data_a: &mut [u8] = unsafe { data.index_mut(0..1) };
-    let data_b: &mut [u8] = unsafe { data.index_mut(1..2) };
-    data_a[0] = 0;
-    data_b[0] = 1;
+    let data_a: &mut u8 = unsafe { data.index_mut(0) };
+    let data_b: &mut u8 = unsafe { data.index_mut(1) };
+    *data_a = 0;
+    *data_b = 1;
 }
 assert_eq!(data[0], 0);
 assert_eq!(data[1], 1);
 ```
 
 Note that this is very unsafe and bypasses Rust's safety guarantees!
-It is the responsibility of the caller of `UnsafeCellSlice::index_mut()` to avoid data races and undefined behavior by not requesting overlapping subslices.
+It is the responsibility of the caller of `UnsafeCellSlice` methods to avoid data races and undefined behavior by not requesting overlapping subslices/elements.
 
 Under the hood, `UnsafeCellSlice` is a reference to a `std::cell::UnsafeCell` slice, hence the name of the crate.
 

@@ -33,3 +33,32 @@ fn smoke_test_par_0_2_par() {
     assert_eq!(data[0], -2 * N_REPETITIONS);
     assert_eq!(data[1], 2 * N_REPETITIONS);
 }
+
+#[test]
+fn index_full() {
+    let mut data = vec![0i64; 2];
+    {
+        let data = UnsafeCellSlice::new(&mut data);
+        let data_a: &mut i64 = &mut unsafe { data.index_mut(..) }[0];
+        decr(data_a);
+        decr(data_a);
+    }
+    assert_eq!(data[0], -2 * N_REPETITIONS);
+    assert_eq!(data[1], 0);
+}
+
+#[test]
+fn index_usize() {
+    let mut data = vec![0i64; 2];
+    {
+        let data = UnsafeCellSlice::new(&mut data);
+        let data_a: &mut i64 = unsafe { data.index_mut(0) };
+        let data_b: &mut i64 = unsafe { data.index_mut(1) };
+        decr(data_a);
+        incr(data_b);
+        decr(data_a);
+        incr(data_b);
+    }
+    assert_eq!(data[0], -2 * N_REPETITIONS);
+    assert_eq!(data[1], 2 * N_REPETITIONS);
+}

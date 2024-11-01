@@ -1,42 +1,42 @@
 //! # unsafe_cell_slice
 //!
-//! A Rust microlibrary for creating multiple mutable subslices of a [`slice`].
+//! A Rust microlibrary for creating multiple mutable references to a [`slice`].
 //!
 //! ### Motivation
-//! The rust borrow checker forbids creating multiple mutable subslices of a [`slice`].
+//! The rust borrow checker forbids creating multiple mutable references of a [`slice`].
 //! For example, this fails to compile with ```cannot borrow `data` as mutable more than once at a time```:
 //! ```rust,compile_fail
 //! let mut data = vec![0u8; 2];
-//! let data_a: &mut [u8] = &mut data[0..1];
-//! let data_b: &mut [u8] = &mut data[1..2];
-//! data_a[0] = 0;
-//! data_b[0] = 1;
+//! let data_a: &mut u8 = &mut data[0];
+//! let data_b: &mut u8 = &mut data[1];
+//! *data_a = 0;
+//! *data_b = 1;
 //! ```
 //!
-//! There are use cases for acquiring multiple mutable subslices of a [`slice`], such as for writing independent elements in parallel.
+//! There are use cases for acquiring multiple mutable references of a [`slice`], such as for writing independent elements in parallel.
 //! A safe approach is to borrow non-overlapping slices via [`slice::split_at_mut`], [`slice::chunks_mut`], etc.
 //! However, such approaches may not be applicable in complicated use cases, such as writing to interleaved elements.
 //!
 //! ### [`UnsafeCellSlice`]
 //! An [`UnsafeCellSlice`] can be created from a mutable slice or the spare capacity in a [`Vec`].
-//! It has an unsafe [`index_mut`](UnsafeCellSlice::index_mut) method that permits creating multiple mutable subslices.
+//! It has unsafe [`get_mut`](UnsafeCellSlice::get_mut) and [`index_mut`](UnsafeCellSlice::index_mut) methods that permit creating multiple mutable references of subslices or elements.
 //!
 //! ```rust
 //! # use unsafe_cell_slice::UnsafeCellSlice;
 //! let mut data = vec![0u8; 2];
 //! {
 //!     let data = UnsafeCellSlice::new(&mut data);
-//!     let data_a: &mut [u8] = unsafe { data.index_mut(0..1) };
-//!     let data_b: &mut [u8] = unsafe { data.index_mut(1..2) };
-//!     data_a[0] = 0;
-//!     data_b[0] = 1;
+//!     let data_a: &mut u8 = unsafe { data.index_mut(0) };
+//!     let data_b: &mut u8 = unsafe { data.index_mut(1) };
+//!     *data_a = 0;
+//!     *data_b = 1;
 //! }
 //! assert_eq!(data[0], 0);
 //! assert_eq!(data[1], 1);
 //! ```
 //!
 //! Note that this is very unsafe and bypasses Rust's safety guarantees!
-//! It is the responsibility of the caller of [`UnsafeCellSlice::index_mut()`] to avoid data races and undefined behavior by not requesting overlapping subslices.
+//! It is the responsibility of the caller of [`UnsafeCellSlice`] methods to avoid data races and undefined behavior by not requesting overlapping subslices/elements.
 //!
 //! Under the hood, [`UnsafeCellSlice`] is a reference to a [`std::cell::UnsafeCell`] slice, hence the name of the crate.
 //!
@@ -47,15 +47,19 @@
 //!
 //! Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
 
-/// An unsafe cell slice. Permits acquisition of multiple mutable subslices of a slice.
+mod slice_index;
+
+pub use slice_index::SliceIndex;
+
+/// An unsafe cell slice. Permits acquisition of multiple mutable references of a slice.
 ///
 /// This is inherently unsafe.
-/// It is the responsibility of the caller to only access non-overlapping subslices to avoid data races and undefined behavior.
+/// It is the responsibility of the caller to only access non-overlapping subslices/elements to avoid data races and undefined behavior.
 #[derive(Copy, Clone)]
 pub struct UnsafeCellSlice<'a, T>(&'a [std::cell::UnsafeCell<T>]);
 
-unsafe impl<'a, T: Send + Sync> Send for UnsafeCellSlice<'a, T> {}
-unsafe impl<'a, T: Send + Sync> Sync for UnsafeCellSlice<'a, T> {}
+unsafe impl<T: Send + Sync> Send for UnsafeCellSlice<'_, T> {}
+unsafe impl<T: Send + Sync> Sync for UnsafeCellSlice<'_, T> {}
 
 impl<'a, T> UnsafeCellSlice<'a, T> {
     /// Create a new [`UnsafeCellSlice`] from a mutable slice.
@@ -84,7 +88,23 @@ impl<'a, T> UnsafeCellSlice<'a, T> {
         self.len() == 0
     }
 
-    /// Get a mutable reference to a subslice of the underlying slice.
+    /// Get a mutable reference to a subslice or element of the underlying slice.
+    ///
+    /// Returns `None` if the index is out of bounds.
+    ///
+    /// # Safety
+    /// This is very unsafe because it is capable of creating multiple mutable references to the same data.
+    /// It is the responsibility of the caller to only access non-overlapping subslices to avoid data races and undefined behavior.
+    #[must_use]
+    #[allow(clippy::mut_from_ref)]
+    pub unsafe fn get_mut<I>(&self, index: I) -> Option<&mut I::Output>
+    where
+        I: SliceIndex<T>,
+    {
+        index.get_mut(self)
+    }
+
+    /// Get a mutable reference to a subslice or element of the underlying slice.
     ///
     /// Note that unlike [`std::ops::IndexMut::index_mut`], `self` is not a mutable reference.
     /// Thus, this method does not support desuraging.
@@ -97,13 +117,11 @@ impl<'a, T> UnsafeCellSlice<'a, T> {
     /// May panic if the index is out of bounds.
     #[must_use]
     #[allow(clippy::mut_from_ref)]
-    pub unsafe fn index_mut(&self, index: std::ops::Range<usize>) -> &mut [T] {
-        assert!(
-            index.end <= self.len() && index.start <= index.end,
-            "index out of bounds"
-        );
-        let ptr = self.0[index.start].get();
-        std::slice::from_raw_parts_mut(ptr, index.end - index.start)
+    pub unsafe fn index_mut<I>(&self, index: I) -> &mut I::Output
+    where
+        I: SliceIndex<T>,
+    {
+        index.index_mut(self)
     }
 }
 
@@ -119,5 +137,22 @@ unsafe fn vec_spare_capacity_to_mut_slice<T>(vec: &mut Vec<T>) -> &mut [T] {
             spare_capacity.as_mut_ptr().cast::<T>(),
             spare_capacity.len(),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn empty() {
+        {
+            let mut data: Vec<u8> = vec![];
+            let data = super::UnsafeCellSlice::new(&mut data);
+            assert!(data.is_empty());
+        }
+        {
+            let mut data: Vec<u8> = vec![1];
+            let data = super::UnsafeCellSlice::new(&mut data);
+            assert!(!data.is_empty());
+        }
     }
 }

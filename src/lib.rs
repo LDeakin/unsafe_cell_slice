@@ -58,8 +58,8 @@ pub use slice_index::SliceIndex;
 #[derive(Copy, Clone)]
 pub struct UnsafeCellSlice<'a, T>(&'a [std::cell::UnsafeCell<T>]);
 
-unsafe impl<'a, T: Send + Sync> Send for UnsafeCellSlice<'a, T> {}
-unsafe impl<'a, T: Send + Sync> Sync for UnsafeCellSlice<'a, T> {}
+unsafe impl<T: Send + Sync> Send for UnsafeCellSlice<'_, T> {}
+unsafe impl<T: Send + Sync> Sync for UnsafeCellSlice<'_, T> {}
 
 impl<'a, T> UnsafeCellSlice<'a, T> {
     /// Create a new [`UnsafeCellSlice`] from a mutable slice.

@@ -35,9 +35,7 @@ unsafe impl<T> SliceIndex<T> for usize {
     type Output = T;
 
     fn get_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> Option<&'a mut Self::Output> {
-        slice.0.get(self).map(|v| {
-            unsafe { &mut *v.get() }
-        })
+        slice.0.get(self).map(|v| unsafe { &mut *v.get() })
     }
 
     fn index_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> &'a mut Self::Output {
@@ -49,9 +47,10 @@ unsafe impl<T> SliceIndex<T> for std::ops::Range<usize> {
     type Output = [T];
 
     fn get_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> Option<&'a mut Self::Output> {
-        slice.0.get(self).map(|s| {
-            unsafe { std::slice::from_raw_parts_mut(s.as_ptr() as *mut T, s.len()) }
-        })
+        slice
+            .0
+            .get(self)
+            .map(|s| unsafe { std::slice::from_raw_parts_mut(s.as_ptr() as *mut T, s.len()) })
     }
 
     fn index_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> &'a mut Self::Output {
@@ -63,9 +62,10 @@ unsafe impl<T> SliceIndex<T> for std::ops::RangeFrom<usize> {
     type Output = [T];
 
     fn get_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> Option<&'a mut Self::Output> {
-        slice.0.get(self).map(|s| {
-            unsafe { std::slice::from_raw_parts_mut(s.as_ptr() as *mut T, s.len()) }
-        })
+        slice
+            .0
+            .get(self)
+            .map(|s| unsafe { std::slice::from_raw_parts_mut(s.as_ptr() as *mut T, s.len()) })
     }
 
     fn index_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> &'a mut Self::Output {
@@ -77,9 +77,10 @@ unsafe impl<T> SliceIndex<T> for std::ops::RangeFull {
     type Output = [T];
 
     fn get_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> Option<&'a mut Self::Output> {
-        slice.0.get(self).map(|s| {
-            unsafe { std::slice::from_raw_parts_mut(s.as_ptr() as *mut T, s.len()) }
-        })
+        slice
+            .0
+            .get(self)
+            .map(|s| unsafe { std::slice::from_raw_parts_mut(s.as_ptr() as *mut T, s.len()) })
     }
 
     fn index_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> &'a mut Self::Output {
@@ -91,9 +92,10 @@ unsafe impl<T> SliceIndex<T> for std::ops::RangeInclusive<usize> {
     type Output = [T];
 
     fn get_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> Option<&'a mut Self::Output> {
-        slice.0.get(self).map(|s| {
-            unsafe { std::slice::from_raw_parts_mut(s.as_ptr() as *mut T, s.len()) }
-        })
+        slice
+            .0
+            .get(self)
+            .map(|s| unsafe { std::slice::from_raw_parts_mut(s.as_ptr() as *mut T, s.len()) })
     }
 
     fn index_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> &'a mut Self::Output {
@@ -105,9 +107,10 @@ unsafe impl<T> SliceIndex<T> for std::ops::RangeTo<usize> {
     type Output = [T];
 
     fn get_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> Option<&'a mut Self::Output> {
-        slice.0.get(self).map(|s| {
-            unsafe { std::slice::from_raw_parts_mut(s.as_ptr() as *mut T, s.len()) }
-        })
+        slice
+            .0
+            .get(self)
+            .map(|s| unsafe { std::slice::from_raw_parts_mut(s.as_ptr() as *mut T, s.len()) })
     }
 
     fn index_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> &'a mut Self::Output {
@@ -119,9 +122,10 @@ unsafe impl<T> SliceIndex<T> for std::ops::RangeToInclusive<usize> {
     type Output = [T];
 
     fn get_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> Option<&'a mut Self::Output> {
-        slice.0.get(self).map(|s| {
-            unsafe { std::slice::from_raw_parts_mut(s.as_ptr() as *mut T, s.len()) }
-        })
+        slice
+            .0
+            .get(self)
+            .map(|s| unsafe { std::slice::from_raw_parts_mut(s.as_ptr() as *mut T, s.len()) })
     }
 
     fn index_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> &'a mut Self::Output {

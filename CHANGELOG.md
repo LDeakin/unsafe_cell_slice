@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+ - make corner-case slicing behavior compatible with std::slice ([#4](https://github.com/LDeakin/unsafe_cell_slice/pull/4) by [@gzz2000])
+
 ## [0.2.1] - 2024-11-01
 
 ### Added
@@ -38,3 +41,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.1]: https://github.com/LDeakin/unsafe_cell_slice/releases/tag/v0.2.1
 [0.2.0]: https://github.com/LDeakin/unsafe_cell_slice/releases/tag/v0.2.0
 [0.1.0]: https://github.com/LDeakin/unsafe_cell_slice/releases/tag/v0.1.0
+
+[@gzz2000]: https://github.com/gzz2000

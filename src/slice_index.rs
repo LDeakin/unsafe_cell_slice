@@ -35,18 +35,13 @@ unsafe impl<T> SliceIndex<T> for usize {
     type Output = T;
 
     fn get_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> Option<&'a mut Self::Output> {
-        if self < slice.len() {
-            let ptr = slice.0[self].get();
-            Some(unsafe { &mut *ptr })
-        } else {
-            None
-        }
+        slice.0.get(self).map(|v| {
+            unsafe { &mut *v.get() }
+        })
     }
 
-    fn index_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> &'a mut T {
-        assert!(self < slice.len(), "index out of bounds");
-        let ptr = slice.0[self].get();
-        unsafe { &mut *ptr }
+    fn index_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> &'a mut Self::Output {
+        self.get_mut(slice).expect("index out of bounds")
     }
 }
 
@@ -54,21 +49,13 @@ unsafe impl<T> SliceIndex<T> for std::ops::Range<usize> {
     type Output = [T];
 
     fn get_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> Option<&'a mut Self::Output> {
-        if self.end <= slice.len() && self.start <= self.end {
-            let ptr = slice.0[self.start].get();
-            Some(unsafe { std::slice::from_raw_parts_mut(ptr, self.end - self.start) })
-        } else {
-            None
-        }
+        slice.0.get(self).map(|s| {
+            unsafe { std::slice::from_raw_parts_mut(s.as_ptr() as *mut T, s.len()) }
+        })
     }
 
-    fn index_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> &'a mut [T] {
-        assert!(
-            self.end <= slice.len() && self.start <= self.end,
-            "index out of bounds"
-        );
-        let ptr = slice.0[self.start].get();
-        unsafe { std::slice::from_raw_parts_mut(ptr, self.end - self.start) }
+    fn index_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> &'a mut Self::Output {
+        self.get_mut(slice).expect("index out of bounds")
     }
 }
 
@@ -76,18 +63,13 @@ unsafe impl<T> SliceIndex<T> for std::ops::RangeFrom<usize> {
     type Output = [T];
 
     fn get_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> Option<&'a mut Self::Output> {
-        if self.start < slice.len() {
-            let ptr = slice.0[self.start].get();
-            Some(unsafe { std::slice::from_raw_parts_mut(ptr, slice.len() - self.start) })
-        } else {
-            None
-        }
+        slice.0.get(self).map(|s| {
+            unsafe { std::slice::from_raw_parts_mut(s.as_ptr() as *mut T, s.len()) }
+        })
     }
 
-    fn index_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> &'a mut [T] {
-        assert!(self.start < slice.len(), "index out of bounds");
-        let ptr = slice.0[self.start].get();
-        unsafe { std::slice::from_raw_parts_mut(ptr, slice.len() - self.start) }
+    fn index_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> &'a mut Self::Output {
+        self.get_mut(slice).expect("index out of bounds")
     }
 }
 
@@ -95,17 +77,13 @@ unsafe impl<T> SliceIndex<T> for std::ops::RangeFull {
     type Output = [T];
 
     fn get_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> Option<&'a mut Self::Output> {
-        if slice.0.is_empty() {
-            None
-        } else {
-            let ptr = slice.0[0].get();
-            Some(unsafe { std::slice::from_raw_parts_mut(ptr, slice.len()) })
-        }
+        slice.0.get(self).map(|s| {
+            unsafe { std::slice::from_raw_parts_mut(s.as_ptr() as *mut T, s.len()) }
+        })
     }
 
-    fn index_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> &'a mut [T] {
-        let ptr = slice.0[0].get();
-        unsafe { std::slice::from_raw_parts_mut(ptr, slice.len()) }
+    fn index_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> &'a mut Self::Output {
+        self.get_mut(slice).expect("index out of bounds")
     }
 }
 
@@ -113,22 +91,13 @@ unsafe impl<T> SliceIndex<T> for std::ops::RangeInclusive<usize> {
     type Output = [T];
 
     fn get_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> Option<&'a mut Self::Output> {
-        let start = *self.start();
-        let end = *self.end();
-        if end < slice.len() && start <= end {
-            let ptr = slice.0[start].get();
-            Some(unsafe { std::slice::from_raw_parts_mut(ptr, end - start + 1) })
-        } else {
-            None
-        }
+        slice.0.get(self).map(|s| {
+            unsafe { std::slice::from_raw_parts_mut(s.as_ptr() as *mut T, s.len()) }
+        })
     }
 
-    fn index_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> &'a mut [T] {
-        let start = *self.start();
-        let end = *self.end();
-        assert!(end <= slice.len() && start <= end, "index out of bounds");
-        let ptr = slice.0[start].get();
-        unsafe { std::slice::from_raw_parts_mut(ptr, end - start + 1) }
+    fn index_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> &'a mut Self::Output {
+        self.get_mut(slice).expect("index out of bounds")
     }
 }
 
@@ -136,18 +105,13 @@ unsafe impl<T> SliceIndex<T> for std::ops::RangeTo<usize> {
     type Output = [T];
 
     fn get_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> Option<&'a mut Self::Output> {
-        if self.end <= slice.len() {
-            let ptr = slice.0[0].get();
-            Some(unsafe { std::slice::from_raw_parts_mut(ptr, self.end) })
-        } else {
-            None
-        }
+        slice.0.get(self).map(|s| {
+            unsafe { std::slice::from_raw_parts_mut(s.as_ptr() as *mut T, s.len()) }
+        })
     }
 
-    fn index_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> &'a mut [T] {
-        assert!(self.end <= slice.len(), "index out of bounds");
-        let ptr = slice.0[0].get();
-        unsafe { std::slice::from_raw_parts_mut(ptr, self.end) }
+    fn index_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> &'a mut Self::Output {
+        self.get_mut(slice).expect("index out of bounds")
     }
 }
 
@@ -155,20 +119,13 @@ unsafe impl<T> SliceIndex<T> for std::ops::RangeToInclusive<usize> {
     type Output = [T];
 
     fn get_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> Option<&'a mut Self::Output> {
-        let end = self.end;
-        if end < slice.len() {
-            let ptr = slice.0[0].get();
-            Some(unsafe { std::slice::from_raw_parts_mut(ptr, end + 1) })
-        } else {
-            None
-        }
+        slice.0.get(self).map(|s| {
+            unsafe { std::slice::from_raw_parts_mut(s.as_ptr() as *mut T, s.len()) }
+        })
     }
 
-    fn index_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> &'a mut [T] {
-        let end = self.end;
-        assert!(end < slice.len(), "index out of bounds");
-        let ptr = slice.0[0].get();
-        unsafe { std::slice::from_raw_parts_mut(ptr, end + 1) }
+    fn index_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> &'a mut Self::Output {
+        self.get_mut(slice).expect("index out of bounds")
     }
 }
 
@@ -239,7 +196,8 @@ mod tests {
         assert_eq!(unsafe { data.get_mut(0..) }.unwrap().len(), 3);
         assert_eq!(unsafe { data.get_mut(1..) }.unwrap().len(), 2);
         assert!(unsafe { data.get_mut(2..) }.is_some());
-        assert!(unsafe { data.get_mut(3..) }.is_none());
+        assert_eq!(unsafe { data.get_mut(3..) }.unwrap().len(), 0);
+        assert!(unsafe { data.get_mut(4..) }.is_none());
     }
 
     #[test]
@@ -255,7 +213,7 @@ mod tests {
         {
             let mut data: Vec<u8> = vec![];
             let data = UnsafeCellSlice::new(&mut data);
-            assert!(unsafe { data.get_mut(..) }.is_none());
+            assert_eq!(unsafe { data.get_mut(..) }.unwrap().len(), 0);
         }
     }
 

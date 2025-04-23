@@ -20,6 +20,7 @@ fn smoke_test_ser_0_2() {
     assert_eq!(data[1], 2 * N_REPETITIONS);
 }
 
+#[ignore] // https://github.com/crossbeam-rs/crossbeam/pull/871?
 #[test]
 fn smoke_test_par_0_2_par() {
     let mut data = vec![0i64; 2];

@@ -18,7 +18,7 @@
 //! However, such approaches may not be applicable in complicated use cases, such as writing to interleaved elements.
 //!
 //! ### [`UnsafeCellSlice`]
-//! An [`UnsafeCellSlice`] can be created from a mutable slice or the spare capacity in a [`Vec`].
+//! An [`UnsafeCellSlice`] can be created from a mutable slice.
 //! It has unsafe [`get_mut`](UnsafeCellSlice::get_mut) and [`index_mut`](UnsafeCellSlice::index_mut) methods that permit creating multiple mutable references of subslices or elements.
 //!
 //! ```rust
@@ -39,6 +39,25 @@
 //! It is the responsibility of the caller of [`UnsafeCellSlice`] methods to avoid data races and undefined behavior by not requesting overlapping subslices/elements.
 //!
 //! Under the hood, [`UnsafeCellSlice`] is a reference to a [`std::cell::UnsafeCell`] slice, hence the name of the crate.
+//!
+//! ### Uninitialised memory
+//! Uninitialised memory must be represented with [`MaybeUninit`](std::mem::MaybeUninit), such as the spare capacity in a [`Vec`] from [`Vec::spare_capacity_mut`].
+//!
+//! ```rust
+//! # use unsafe_cell_slice::UnsafeCellSlice;
+//! let mut data: Vec<u8> = Vec::with_capacity(2);
+//! {
+//!     let data = UnsafeCellSlice::new(&mut data.spare_capacity_mut()[..2]);
+//!     unsafe { data.index_mut(0) }.write(0);
+//!     unsafe { data.index_mut(1) }.write(1);
+//! }
+//! // SAFETY: both elements were initialised above.
+//! unsafe { data.set_len(2) };
+//! assert_eq!(data, [0, 1]);
+//! ```
+//!
+//! An `UnsafeCellSlice<T>` converts into an `UnsafeCellSlice<MaybeUninit<T>>` via [`From`], so an API taking `impl Into<UnsafeCellSlice<MaybeUninit<T>>>` accepts both initialised and uninitialised memory.
+//! Uninitialised values must not be written through such a slice if it was converted from initialised `T`s.
 //!
 //! ## Licence
 //! `unsafe_cell_slice` is licensed under either of
@@ -71,6 +90,12 @@ impl<'a, T> UnsafeCellSlice<'a, T> {
     }
 
     /// Create a new [`UnsafeCellSlice`] from the spare capacity in a [`Vec`].
+    ///
+    /// The elements are uninitialised, but this is not reflected in the type.
+    #[deprecated(
+        since = "0.2.3",
+        note = "use `UnsafeCellSlice::new(vec.spare_capacity_mut())`, which yields `UnsafeCellSlice<MaybeUninit<T>>`"
+    )]
     #[must_use]
     pub fn new_from_vec_with_spare_capacity(vec: &'a mut Vec<T>) -> Self {
         Self::new(unsafe { vec_spare_capacity_to_mut_slice(vec) })
@@ -95,6 +120,8 @@ impl<'a, T> UnsafeCellSlice<'a, T> {
     /// # Safety
     /// This is very unsafe because it is capable of creating multiple mutable references to the same data.
     /// It is the responsibility of the caller to only access non-overlapping subslices to avoid data races and undefined behavior.
+    ///
+    /// The caller must not write values that are invalid for the original element type (e.g. uninitialised values through a slice converted from initialised `T`s).
     #[must_use]
     #[allow(clippy::mut_from_ref)]
     pub unsafe fn get_mut<I>(&self, index: I) -> Option<&mut I::Output>
@@ -112,6 +139,8 @@ impl<'a, T> UnsafeCellSlice<'a, T> {
     /// # Safety
     /// This is very unsafe because it is capable of creating multiple mutable references to the same data.
     /// It is the responsibility of the caller to only access non-overlapping subslices to avoid data races and undefined behavior.
+    ///
+    /// The caller must not write values that are invalid for the original element type (e.g. uninitialised values through a slice converted from initialised `T`s).
     ///
     /// # Panics
     /// May panic if the index is out of bounds.

@@ -125,6 +125,19 @@ impl<'a, T> UnsafeCellSlice<'a, T> {
     }
 }
 
+/// Reinterpret an [`UnsafeCellSlice`] of `T` as an [`UnsafeCellSlice`] of [`MaybeUninit<T>`](std::mem::MaybeUninit).
+///
+/// This permits a single API to accept both initialised and uninitialised memory.
+/// Writing an uninitialised value through the converted slice is undefined behaviour if the original slice is subsequently read as `T`, see the safety sections of [`get_mut`](UnsafeCellSlice::get_mut) and [`index_mut`](UnsafeCellSlice::index_mut).
+impl<'a, T> From<UnsafeCellSlice<'a, T>> for UnsafeCellSlice<'a, std::mem::MaybeUninit<T>> {
+    fn from(slice: UnsafeCellSlice<'a, T>) -> Self {
+        // `UnsafeCell` and `MaybeUninit` are `repr(transparent)`, and a slice pointer cast preserves the length.
+        let ptr = slice.0 as *const [std::cell::UnsafeCell<T>]
+            as *const [std::cell::UnsafeCell<std::mem::MaybeUninit<T>>];
+        Self(unsafe { &*ptr })
+    }
+}
+
 /// Get a mutable slice of the spare capacity in a vector.
 ///
 /// # Safety

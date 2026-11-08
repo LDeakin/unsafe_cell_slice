@@ -12,6 +12,7 @@ pub unsafe trait SliceIndex<T>: private_slice_index::Sealed {
     type Output: ?Sized;
 
     /// Returns a mutable reference to the output at this location, if in bounds.
+    #[allow(clippy::mut_from_ref)]
     fn get_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> Option<&'a mut Self::Output>;
 
     /// Returns a mutable reference to the output at this location, panicking

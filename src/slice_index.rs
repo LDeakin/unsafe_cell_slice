@@ -12,6 +12,7 @@ pub unsafe trait SliceIndex<T>: private_slice_index::Sealed {
     type Output: ?Sized;
 
     /// Returns a mutable reference to the output at this location, if in bounds.
+    #[allow(clippy::mut_from_ref)]
     fn get_mut<'a>(self, slice: &'a UnsafeCellSlice<T>) -> Option<&'a mut Self::Output>;
 
     /// Returns a mutable reference to the output at this location, panicking
@@ -151,6 +152,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::reversed_empty_ranges)] // tests std::slice parity
     fn slice_index_range() {
         let mut data = vec![0i64, 1i64, 2i64];
         let data = UnsafeCellSlice::new(&mut data);
@@ -222,6 +224,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::reversed_empty_ranges)] // tests std::slice parity
     fn slice_index_range_inclusive() {
         let mut data = vec![0i64, 1i64, 2i64, 3i64];
         let data = UnsafeCellSlice::new(&mut data);

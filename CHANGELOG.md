@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+ - Add `From<UnsafeCellSlice<T>>` for `UnsafeCellSlice<MaybeUninit<T>>`
+
+### Deprecated
+ - Deprecate `UnsafeCellSlice::new_from_vec_with_spare_capacity()`: it hides that the spare capacity is uninitialised
+   - Use `UnsafeCellSlice::new(vec.spare_capacity_mut())` instead
+
 ## [0.2.2] - 2025-04-23
 
 ### Fixed

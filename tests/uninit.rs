@@ -72,3 +72,63 @@ fn from_into_generic_ser() {
     write_first(UnsafeCellSlice::new(&mut init), 2);
     assert_eq!(init, [2, 0]);
 }
+
+#[test]
+fn write_copy_of_slice_at_ser() {
+    let mut data: Vec<u32> = Vec::with_capacity(N);
+    {
+        let spare = UnsafeCellSlice::new(&mut data.spare_capacity_mut()[..N]);
+        let src: Vec<u32> = (0..N as u32).collect();
+        unsafe {
+            spare.write_copy_of_slice_at(N / 2, &src[N / 2..]);
+            spare.write_copy_of_slice_at(0, &src[..N / 2]);
+            spare.write_copy_of_slice_at(N, &[]);
+        }
+    }
+    // SAFETY: all `N` elements were written above.
+    unsafe { data.set_len(N) };
+    assert!(data.iter().enumerate().all(|(i, &v)| v == i as u32));
+}
+
+#[test]
+fn write_copy_of_slice_at_par() {
+    const CHUNK: usize = 4;
+    let mut data: Vec<u32> = Vec::with_capacity(N);
+    {
+        let spare = UnsafeCellSlice::new(&mut data.spare_capacity_mut()[..N]);
+        (0..N / CHUNK).into_par_iter().for_each(|c| {
+            let src: Vec<u32> = (c * CHUNK..(c + 1) * CHUNK).map(|i| i as u32).collect();
+            // SAFETY: each chunk is written by exactly one task.
+            unsafe { spare.write_copy_of_slice_at(c * CHUNK, &src) };
+        });
+    }
+    // SAFETY: all `N` elements were written above.
+    unsafe { data.set_len(N) };
+    assert!(data.iter().enumerate().all(|(i, &v)| v == i as u32));
+}
+
+#[test]
+fn write_copy_of_slice_at_from_init_ser() {
+    let mut data = vec![0u16; 4];
+    {
+        let uninit: UnsafeCellSlice<MaybeUninit<u16>> = UnsafeCellSlice::new(&mut data).into();
+        unsafe { uninit.write_copy_of_slice_at(1, &[7, 9]) };
+    }
+    assert_eq!(data, [0, 7, 9, 0]);
+}
+
+#[test]
+#[should_panic(expected = "index out of bounds")]
+fn write_copy_of_slice_at_oob_ser() {
+    let mut data = [MaybeUninit::<u8>::uninit(); 2];
+    let data = UnsafeCellSlice::new(&mut data);
+    unsafe { data.write_copy_of_slice_at(1, &[1, 2]) };
+}
+
+#[test]
+#[should_panic(expected = "index out of bounds")]
+fn write_copy_of_slice_at_overflow_ser() {
+    let mut data = [MaybeUninit::<u8>::uninit(); 2];
+    let data = UnsafeCellSlice::new(&mut data);
+    unsafe { data.write_copy_of_slice_at(usize::MAX, &[1]) };
+}

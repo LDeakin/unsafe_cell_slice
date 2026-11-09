@@ -45,16 +45,19 @@
 //!
 //! ```rust
 //! # use unsafe_cell_slice::UnsafeCellSlice;
-//! let mut data: Vec<u8> = Vec::with_capacity(2);
+//! let mut data: Vec<u8> = Vec::with_capacity(4);
 //! {
-//!     let data = UnsafeCellSlice::new(&mut data.spare_capacity_mut()[..2]);
+//!     let data = UnsafeCellSlice::new(&mut data.spare_capacity_mut()[..4]);
 //!     unsafe { data.index_mut(0) }.write(0);
 //!     unsafe { data.index_mut(1) }.write(1);
+//!     unsafe { data.write_copy_of_slice_at(2, &[2, 3]) };
 //! }
-//! // SAFETY: both elements were initialised above.
-//! unsafe { data.set_len(2) };
-//! assert_eq!(data, [0, 1]);
+//! // SAFETY: all elements were initialised above.
+//! unsafe { data.set_len(4) };
+//! assert_eq!(data, [0, 1, 2, 3]);
 //! ```
+//!
+//! [`write_copy_of_slice_at`](UnsafeCellSlice::write_copy_of_slice_at) copies initialised values into a subslice, like [`<[MaybeUninit<T>]>::write_copy_of_slice`](https://doc.rust-lang.org/std/primitive.slice.html#method.write_copy_of_slice) at an offset.
 //!
 //! An `UnsafeCellSlice<T>` converts into an `UnsafeCellSlice<MaybeUninit<T>>` via [`From`], so an API taking `impl Into<UnsafeCellSlice<MaybeUninit<T>>>` accepts both initialised and uninitialised memory.
 //! Uninitialised values must not be written through such a slice if it was converted from initialised `T`s.
@@ -151,6 +154,27 @@ impl<'a, T> UnsafeCellSlice<'a, T> {
         I: SliceIndex<T>,
     {
         index.index_mut(self)
+    }
+}
+
+impl<T: Copy> UnsafeCellSlice<'_, std::mem::MaybeUninit<T>> {
+    /// Copy `src` into the elements starting at `offset`, initialising them.
+    ///
+    /// This is the positional counterpart of [`<[MaybeUninit<T>]>::write_copy_of_slice`](https://doc.rust-lang.org/std/primitive.slice.html#method.write_copy_of_slice).
+    ///
+    /// # Safety
+    /// The elements `offset..offset + src.len()` must not overlap any other subslices/elements accessed concurrently.
+    ///
+    /// # Panics
+    /// Panics if `offset + src.len()` exceeds the length of the slice.
+    #[allow(unused_unsafe)]
+    pub unsafe fn write_copy_of_slice_at(&self, offset: usize, src: &[T]) {
+        let end = offset.checked_add(src.len()).expect("index out of bounds");
+        // SAFETY: the caller guarantees `offset..end` is not accessed concurrently.
+        let dst = unsafe { self.index_mut(offset..end) };
+        // SAFETY: `MaybeUninit<T>` has the same layout as `T`, and `src` is only read.
+        let src = unsafe { &*(src as *const [T] as *const [std::mem::MaybeUninit<T>]) };
+        dst.copy_from_slice(src);
     }
 }
 

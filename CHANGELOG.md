@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased](https://github.com/LDeakin/unsafe_cell_slice/compare/v0.2.3...HEAD)
 
+### Added
+- Add `UnsafeCellSlice<MaybeUninit<T>>::write_copy_of_slice_at()`
+
 ## [0.2.3](https://github.com/LDeakin/unsafe_cell_slice/releases/tag/v0.2.3) - 2026-11-09
 
 ### Added
